@@ -47,7 +47,7 @@ const run = async () => {
         app.put('/item/:id', async(req, res)=>{
             const id = req.params.id;
             const filter = {_id: ObjectId(id)}
-            const option = {upsert: true}
+            const option = {upsert: true} 
             const updateItem = {
                 $set: req.body
             } 
@@ -56,7 +56,7 @@ const run = async () => {
             res.send(result)
 
         })
-        //_______________________delete item_____________________
+        //_______________________delete item_____________________ 
         app.delete('/item/:id', async(req, res)=>{
             const id = req.params.id
             const query = {_id: ObjectId(id)}
