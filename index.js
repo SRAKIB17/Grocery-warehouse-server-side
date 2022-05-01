@@ -50,7 +50,7 @@ const run = async () => {
             const option = {upsert: true}
             const updateItem = {
                 $set: req.body
-            }
+            } 
             console.log(updateItem)
             const result = await ItemCollection.updateOne(filter, updateItem, option)
             res.send(result)
