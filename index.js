@@ -3,7 +3,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const cores = require('cors')
 const app = express()
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const { json } = require('express');
 
 // middleware 
 app.use(cores())
@@ -40,7 +41,7 @@ const run = async () => {
         await client.connect()
         const ItemCollection = client.db("ItemManage").collection('Item')
 
-        // authorization 
+        //------------------------------- authorization =--------------------------------------
         app.post('/login', async (req, res) => {
             const email = req.body.email;
             const token = jwt.sign({ email }, process.env.SECRET_KEY, {
@@ -69,15 +70,22 @@ const run = async () => {
             }
 
         })
-        //_________________________for get item database ______________________________
+        //_________________________for get item from database ______________________________
         app.get('/item', async (req, res) => {
             const query = {}
-            const page = parseInt(req.query.page) - 1;
+            const page = parseInt(req.query.page);
             const skip = parseInt(req.query.skip);
 
             const cursor = ItemCollection.find({}).skip(skip * page).limit(skip)
             const result = await cursor.toArray()
             res.send(result)
+        })
+        //--------------------------- for search value ------------------------------
+
+        //______________________________ get page Number ____________________________________
+        app.get('/item-page', async (req, res) => {
+            const page = await ItemCollection.estimatedDocumentCount();
+            res.send({ page })
         })
         //_______________________________ get item one by id _______________________
         app.get('/item/:id', async (req, res) => {
@@ -111,6 +119,7 @@ const run = async () => {
             const result = await ItemCollection.deleteOne(query)
             res.send(result)
         })
+
     }
     finally {
 
