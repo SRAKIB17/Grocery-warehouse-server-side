@@ -3,6 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const cores = require('cors')
 const app = express()
+const jwt = require('jsonwebtoken')
 
 // middleware 
 app.use(cores())
@@ -21,6 +22,26 @@ const run = async () => {
     try {
         await client.connect()
         const ItemCollection = client.db("ItemManage").collection('Item')
+
+        // authorization 
+        app.post('/login', async(req,res)=>{
+            const email = req.body.email;
+            const token =  jwt.sign({email}, process.env.SECRET_KEY, {
+                expiresIn: '1d'
+            })
+            res.send(token)
+        })
+        //__________________________________ get my item ________________________________
+        app.get('/my-items/:id', async(req, res)=>{
+            const {id} = req.params;
+            const page = parseInt(req.query.page) - 1;
+            const skip = parseInt(req.query.skip);
+            const query = {userId: id};
+            
+            const cursor = ItemCollection.find(query).skip(skip*page).limit(skip);
+            const result = await cursor.toArray()
+            res.send(result)
+        })
         //_________________________for get item database ______________________________
         app.get('/item', async(req,res)=>{
             const query = {}
