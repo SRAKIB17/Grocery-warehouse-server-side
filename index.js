@@ -11,7 +11,24 @@ app.use(express.json())
 require('dotenv').config()
 
 const port = process.env.PORT || 5000;
- 
+
+//_________________________________verify token_______________________________________
+const verifyToken = (req, res, next) => {
+    const FullToken = req.headers.token
+    if (!FullToken || FullToken === 'null') {
+        console.log(5345354435)
+        return res.status(401).send({ message: 'Unathorization' })
+    }
+    const token = FullToken.split(' ')[1]
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+        req.body = decoded?.email;
+        next()
+    })
+
+    // const 
+
+
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.5xr8v.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -24,68 +41,79 @@ const run = async () => {
         const ItemCollection = client.db("ItemManage").collection('Item')
 
         // authorization 
-        app.post('/login', async(req,res)=>{
+        app.post('/login', async (req, res) => {
             const email = req.body.email;
-            const token =  jwt.sign({email}, process.env.SECRET_KEY, {
+            const token = jwt.sign({ email }, process.env.SECRET_KEY, {
                 expiresIn: '1d'
             })
             res.send(token)
         })
         //__________________________________ get my item ________________________________
-        app.get('/my-items/:id', async(req, res)=>{
-            const {id} = req.params;
+        app.get('/my-items/:id', verifyToken, async (req, res) => {
+
+            const { id } = req.params;
             const page = parseInt(req.query.page) - 1;
             const skip = parseInt(req.query.skip);
-            const query = {userId: id};
-            
-            const cursor = ItemCollection.find(query).skip(skip*page).limit(skip);
-            const result = await cursor.toArray()
-            res.send(result)
+            const getUserEmail = req.query.email;
+            console.log(getUserEmail)
+            const email = req.body;
+            if (email === getUserEmail) {
+                const query = { userId: id };
+
+                const cursor = ItemCollection.find(query).skip(skip * page).limit(skip);
+                const result = await cursor.toArray()
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+
         })
         //_________________________for get item database ______________________________
-        app.get('/item', async(req,res)=>{
+        app.get('/item', async (req, res) => {
             const query = {}
             const page = parseInt(req.query.page) - 1;
             const skip = parseInt(req.query.skip);
-            const cursor = ItemCollection.find({}).skip(skip*page).limit(skip)
+
+            const cursor = ItemCollection.find({}).skip(skip * page).limit(skip)
             const result = await cursor.toArray()
             res.send(result)
         })
         //_______________________________ get item one by id _______________________
-        app.get('/item/:id', async(req,res)=>{
+        app.get('/item/:id', async (req, res) => {
             const id = req.params;
-            const query = {_id: ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const cursor = await ItemCollection.findOne(query)
             res.send(cursor)
         })
         // ______________________________for add item ____________________________________
-        app.post('/item', async(req,res)=>{
+        app.post('/item', async (req, res) => {
             const item = req.body
             const result = await ItemCollection.insertOne(item)
             res.send(result)
         })
         // ____________________________________updata item  ____________________________
-        app.put('/item/:id', async(req, res)=>{
+        app.put('/item/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = {_id: ObjectId(id)}
-            const option = {upsert: true} 
+            const filter = { _id: ObjectId(id) }
+            const option = { upsert: true }
             const updateItem = {
                 $set: req.body
-            } 
+            }
             const result = await ItemCollection.updateOne(filter, updateItem, option)
             res.send(result)
 
         })
         //_______________________delete item_____________________ 
-        app.delete('/item/:id', async(req, res)=>{
+        app.delete('/item/:id', async (req, res) => {
             const id = req.params.id
-            const query = {_id: ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const result = await ItemCollection.deleteOne(query)
             res.send(result)
         })
     }
-    finally{
-        
+    finally {
+
     }
 }
 run().catch(console.dir)
