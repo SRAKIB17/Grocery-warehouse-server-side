@@ -53,17 +53,18 @@ const run = async () => {
         app.get('/my-items/:id', verifyToken, async (req, res) => {
 
             const { id } = req.params;
-            const page = parseInt(req.query.page) - 1;
+            const page = parseInt(req.query.page);
             const skip = parseInt(req.query.skip);
             const getUserEmail = req.query.email;
-            console.log(getUserEmail)
             const email = req.body;
             if (email === getUserEmail) {
                 const query = { userId: id };
+                const count = await ItemCollection.countDocuments(query)
+
 
                 const cursor = ItemCollection.find(query).skip(skip * page).limit(skip);
                 const result = await cursor.toArray()
-                res.send(result)
+                res.send({ data: result, count })
             }
             else {
                 res.status(403).send({ message: 'forbidden access' })
@@ -75,18 +76,13 @@ const run = async () => {
             const query = {}
             const page = parseInt(req.query.page);
             const skip = parseInt(req.query.skip);
-
+            const count = await ItemCollection.estimatedDocumentCount();
+            
             const cursor = ItemCollection.find({}).skip(skip * page).limit(skip)
             const result = await cursor.toArray()
-            res.send(result)
+            res.send({data:result, count})
         })
-        //--------------------------- for search value ------------------------------
 
-        //______________________________ get page Number ____________________________________
-        app.get('/item-page', async (req, res) => {
-            const page = await ItemCollection.estimatedDocumentCount();
-            res.send({ page })
-        })
         //_______________________________ get item one by id _______________________
         app.get('/item/:id', async (req, res) => {
             const id = req.params;
