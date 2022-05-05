@@ -71,16 +71,77 @@ const run = async () => {
             }
 
         })
+
+        // for search quary m
+        app.get('/search', async (req, res) => {
+            const query = new RegExp(req.query.q, 'i')
+            const userId = req.query.userId
+            const page = parseInt(req.query.page);
+            const skip = parseInt(req.query.skip);
+            if (userId) {
+                console.log(5454543)
+                const cursor = ItemCollection.find({
+                    "$and": [
+                        { userId: userId },
+                        {
+                            "$or": [
+                                { title: { $regex: query } },
+                                { category: { $regex: query } },
+                                { supplierName: { $regex: query } }
+                            ]
+                        }
+                    ]
+                }).skip(skip * page).limit(skip);
+                const count = await ItemCollection.countDocuments({
+                        "$and": [
+                            { userId: userId },
+                            {
+                                "$or": [
+                                    { title: { $regex: query } },
+                                    { category: { $regex: query } },
+                                    { supplierName: { $regex: query } }
+                                ]
+                            }
+                        ]
+                    })
+                const result = await cursor.toArray()
+                res.send({ data: result, count })
+
+            }
+            else {
+                const cursor = ItemCollection.find({
+                    "$or": [
+                        { title: { $regex: query } },
+                        { category: { $regex: query } },
+                        { supplierName: { $regex: query } }
+                    ]
+                }).skip(skip * page).limit(skip);
+
+                const count = await ItemCollection.countDocuments({
+                    "$or": [
+                        { title: { $regex: query } },
+                        { category: { $regex: query } },
+                        { supplierName: { $regex: query } }
+                    ]
+                })
+
+                const result = await cursor.toArray()
+
+                res.send({ data: result, count })
+            }
+
+        })
+
         //_________________________for get item from database ______________________________
         app.get('/item', async (req, res) => {
             const query = {}
             const page = parseInt(req.query.page);
             const skip = parseInt(req.query.skip);
             const count = await ItemCollection.estimatedDocumentCount();
-            
+
             const cursor = ItemCollection.find({}).skip(skip * page).limit(skip)
             const result = await cursor.toArray()
-            res.send({data:result, count})
+            res.send({ data: result, count })
         })
 
         //_______________________________ get item one by id _______________________
